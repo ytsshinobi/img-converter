@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>File Converter | CodingProjectsUz</title>
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+
+      #inputContainer {
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #dropArea {
+        border: 4px dashed #3498db;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        background-color: #fff;
+        border-radius: 20px;
+        transition: border 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #dropArea:hover {
+        border: 4px dashed #2980b9;
+      }
+
+      #dropArea p {
+        margin: 0;
+        color: #3498db;
+        font-size: 14px;
+        margin-bottom: 10px;
+      }
+
+      #chooseFile {
+        margin-top: 10px;
+        padding: 10px 20px;
+        font-size: 14px;
+        background-color: #3498db;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      #chooseFile:hover {
+        background-color: #2980b9;
+      }
+
+      button {
+        margin-top: 10px;
+        padding: 10px 20px;
+        font-size: 14px;
+        background-color: #3498db;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      button:hover {
+        background-color: #2980b9;
+      }
+
+      #qualitySelect {
+        margin-top: 10px;
+        padding: 8px;
+        font-size: 12px;
+        border-radius: 10px;
+      }
+
+      #convertedImg {
+        display: none;
+        margin-top: 20px;
+        max-width: 100%;
+        border-radius: 20px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      }
+
+      #downloadButton {
+        display: none;
+        margin-top: 20px;
+      }
+
+      #downloadButton button {
+        padding: 10px 20px;
+        font-size: 14px;
+        background-color: #2ecc71;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      #downloadButton button:hover {
+        background-color: #27ae60;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="inputContainer">
+      <label
+        for="fileInput"
+        id="dropArea"
+        ondrop="handleDrop(event)"
+        ondragover="handleDragOver(event)"
+      >
+        <p>Drag & Drop a file here or click to select one</p>
+        <input
+          type="file"
+          id="fileInput"
+          style="display: none"
+          onchange="handleFileSelect(event)"
+        />
+        <button
+          id="chooseFile"
+          onclick="document.getElementById('fileInput').click()"
+        >
+          Choose File
+        </button>
+      </label>
+      <select id="qualitySelect" style="display: none">
+        <option value="low">Low Quality</option>
+        <option value="normal" selected>Normal Quality</option>
+        <option value="high">High Quality</option>
+      </select>
+      <button onclick="convertToFormat('jpeg')">Convert to JPEG</button>
+      <button onclick="convertToFormat('png')">Convert to PNG</button>
+      <button onclick="convertToFormat('webp')">Convert to WebP</button>
+    </div>
+    <canvas id="imageCanvas" style="display: none"></canvas>
+    <img id="convertedImg" alt="Converted Image" />
+    <div id="downloadButton" style="display: none">
+      <a download="converted_image">
+        <button>Download Converted Image</button>
+      </a>
+    </div>
+    <script>
+      function handleDrop(event) {
+        event.preventDefault();
+        const files = event.dataTransfer.files;
+        handleFileSelect({ target: { files } });
+      }
+
+      function handleDragOver(event) {
+        event.preventDefault();
+      }
+
+      function handleFileSelect(event) {
+        const input = document.getElementById("fileInput");
+        const file = event.target.files[0];
+
+        if (file) {
+          input.files = event.target.files;
+          convertToFormat("jpeg"); // Default to JPEG conversion for click-to-select
+        }
+      }
+
+      function convertToFormat(format) {
+        const input = document.getElementById("fileInput");
+        const canvas = document.getElementById("imageCanvas");
+        const convertedImg = document.getElementById("convertedImg");
+        const downloadButton = document.getElementById("downloadButton");
+        const qualitySelect = document.getElementById("qualitySelect");
+
+        const file = input.files[0];
+        if (!file) {
+          alert("Please select a file");
+          return;
+        }
+
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+          const img = new Image();
+          img.src = e.target.result;
+
+          img.onload = function () {
+            const ctx = canvas.getContext("2d");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            let dataUrl;
+
+            if (format === "webp") {
+              const quality = qualitySelect.value;
+              dataUrl = canvas.toDataURL(`image/webp`, quality);
+            } else {
+              dataUrl = canvas.toDataURL(`image/${format}`);
+            }
+
+            // Display the converted image
+            convertedImg.src = dataUrl;
+            convertedImg.style.display = "block";
+
+            // Show the download button
+            downloadButton.style.display = "block";
+            downloadButton.children[0].href = dataUrl;
+            downloadButton.children[0].download = `converted_image.${format}`;
+          };
+        };
+
+        reader.readAsDataURL(file);
+
+        // Show quality select only for WebP format
+        qualitySelect.style.display =
+          format === "webp" ? "inline-block" : "none";
+      }
+    </script>
+  </body>
+</html>
